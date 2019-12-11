@@ -1,0 +1,43 @@
+---
+title: "Pan Sarcoma Fusion Gene Nanostring Assay - Report of Statistical Findings"
+author: ""
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    toc: yes
+  word_document:
+    fig_caption: yes
+    toc: yes
+---
+
+# Summary
+
+Input parameters:
+
+- input folder name: `r gsub("\\\\","/",input_folder_name)`
+- output folder name: `r gsub("\\\\","/",output_folder_name)`
+
+```{r echo=FALSE, results='asis', anchor="Table"}
+summary_table <- data.frame(
+  "Fusion probes"=apply(result$s_ratio,2,function(x){sum(x>5)}),
+  "Housekeeper ratio"=round(result$hk_ratios,digits=2)
+)
+pander::pandoc.table(summary_table, caption="Number of fusion probes detected")
+```
+
+
+# Details
+```{r echo=FALSE, results='asis'}
+for (sample_id in names(result$s_ratio)) {
+  result$do_report(sample_id)$get_plot()
+  cat("\n")
+  # add house keeper probe ratio for each same and the average
+  pander::pandoc.table(
+    rbind(rownames(result$p_ratios_hk),round(result$p_ratios_hk[,sample_id],digits=2)), 
+    caption=paste0("HK probe ratio: ",sample_id))
+}
+```
