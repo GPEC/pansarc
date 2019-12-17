@@ -18,12 +18,13 @@ HYB.TIME.SHORT <- "Short-Hyb"
 ### end of some constants ###
 #############################
 
-# parse a single rcc file for expression data ----------------------------------
-#
-# filename: file name of RCC file
-#
-# return a data matrix with the following columns:
-#        "Name","Accession","Code.Class", [column.name]
+#' parse a single rcc file for expression data ----------------------------------
+#'
+#' @param filename: file name of RCC file
+#' @param column.name: rcc "column" name to extract data from
+#'
+#' @return a data matrix with the following columns:
+#'        "Name","Accession","Code.Class", [column.name]
 parse_rcc_expr_single_file <- function(filename, column.name="Count") {
 	op <- options("stringsAsFactors")
 	options(stringsAsFactors=FALSE)
@@ -60,12 +61,13 @@ parse_rcc_expr_single_file <- function(filename, column.name="Count") {
 #' @param sample.name.format.function: function to format the file name into sample name
 #' @param exclude: file(s) to exclude
 #' @param get.excluded.files.instead: if set to true, get excluded files instead only
+#' @param trim.gene.names: whether to remove preceeding/trailing white spaces from gene names
 #' @return a data frame of the merged expression data; row=probe, column=sample
 #' @author Samuel Leung
 #' @export
 #' @examples
 #' parse_rcc_expr(c("folder1","folder2"),function(x){x})
-parse_rcc_expr <- function(folder.name, sample.name.format.function=NULL, exclude=NULL, get.excluded.files.instead=FALSE) {
+parse_rcc_expr <- function(folder.name, sample.name.format.function=NULL, exclude=NULL, get.excluded.files.instead=FALSE, trim.gene.names=TRUE) {
   if (is.null(sample.name.format.function)) {
     # a function that does nothing
     sample.name.format.function <- function(x){x}
@@ -120,6 +122,9 @@ parse_rcc_expr <- function(folder.name, sample.name.format.function=NULL, exclud
 				}
 			}
 		}	
+        if (trim.gene.names) {
+          rcc.expr.d[,RCC.CODE.SUMMARY.COLNAME.NAME] <- stringr::str_trim(rcc.expr.d[,RCC.CODE.SUMMARY.COLNAME.NAME])
+        }
 	}
 	return(rcc.expr.d)
 }
