@@ -14,7 +14,7 @@ require(assertthat)
 #'  this an array of 2 elements: excel file name, excel worksheet name
 #' @param output_dir: output folder name for data export, if NA, no data will be exported
 #' @param pos_ctl_bound: bound for positive control normalization data check; default 0.3-3
-#' @param sample_ratio_threshold: threshold for fusion probe detection; default: 5
+#' @param sample_ratio_threshold: threshold for fusion probe detection; if a file is provided, this file would contain custom threshold for individual genes; default: 5
 #' @param hk_qc_threshold: housekeeper QC threshold; default 0.3
 #' @param do_main: if TRUE do analysis with main codeset
 #' @return a list with the following elements
@@ -31,7 +31,7 @@ analyze <- function(input_fname,
     probe_med_finfo,
     output_dir,
     pos_ctl_bound=c(0.3,3),
-    sample_ratio_threshold=5,
+    sample_ratio_threshold=NA,
     hk_qc_threshold=0.3,
     do_main=TRUE) {
   if (!do_main) {
@@ -39,7 +39,7 @@ analyze <- function(input_fname,
   }
   # force load package
   library(xlsx)
-  
+
   # 1. parse RCC files go get raw counts -----------------------------------------
   if (do_main) {
     r_rcc <- parse_rcc_expr(input_fname,function(x){x})
@@ -92,6 +92,37 @@ analyze <- function(input_fname,
   # calculate PRR = PR / median (all probe_ratios within sample except housekeeper)
   s_ratios = p_ratios / matrix(rep(apply(p_ratios,2,median),times=nrow(n_rcc)),ncol=ncol(n_rcc),byrow=TRUE)
   
+  # figure out threshold
+  DEFAULT_SAMPLE_RATIO_THRESHOLD <- 5
+  if (is.na(sample_ratio_threshold)) {
+    # nothing is specified for threshold, set threshold to default threshold
+    sample_ratio_threshold <- DEFAULT_SAMPLE_RATIO_THRESHOLD
+  }
+  # check if sample_ratio_threshold is in fact a filename
+  sr_th_default <- NA
+  if (file.exists(as.character(sample_ratio_threshold))) {
+    sr_th_default <- DEFAULT_SAMPLE_RATIO_THRESHOLD
+    sr_th_custom_d <- xlsx::read.xlsx2(sample_ratio_threshold,sheetIndex=1)
+    assertthat::assert_that(
+      sum(sr_th_custom_d$gene %in% rownames(s_ratios))==nrow(sr_th_custom_d),
+      msg=paste0("unknown genes in '",sample_ratio_threshold,"': ",
+        paste(sr_th_custom_d$gene[!sr_th_custom_d$gene %in% rownames(s_ratios)], collapse = ", ")
+      )
+    )
+  } else {
+    # assume this corresponds to a single threshold (number)
+    sr_th_default <- tryCatch(
+      as.numeric(sample_ratio_threshold),
+      warning=function(cond) {
+        stop(paste0("incorrect input to 'sample_ratio_threshold' ... this needs to be either a number or an Excel file."))
+      }
+    )
+    sr_th_custom_d <- data.frame(
+      gene=character(0),
+      threshold=integer(0)
+    )
+  }
+
   # 4. QC by housekeepers --------------------------------------------------------
   #    a. for each HK, calculate normalized HK count / median HK count for initial 36 samples
   #    b. for each sample, calculate the average of HK values in a)
@@ -101,7 +132,12 @@ analyze <- function(input_fname,
   
   # 5. generate plots and indicate fusion genes ----------------------------------
   do_report <- function(sample_id) {
-    fg_indexes <- which(s_ratios[,sample_id]>sample_ratio_threshold)
+    sample_ratio_threshold_arr <- rep(sr_th_default,nrow(s_ratios))
+    if (nrow(sr_th_custom_d)>0) {
+      sample_ratio_threshold_arr[match(sr_th_custom_d$gene,rownames(s_ratios))] <- sr_th_custom_d$threshold
+    }
+
+    fg_indexes <- which(s_ratios[,sample_id]>sample_ratio_threshold_arr)
     fg_detected <- length(fg_indexes)>0
     
     # function to generate a table of detected fusion probe and sample ratio
@@ -118,10 +154,10 @@ analyze <- function(input_fname,
           s_ratios[,sample_id],
           ylab="Sample ratio",
           xlab="Nanostring probe",
-          ylim=c(0,max((sample_ratio_threshold*1.5),max(s_ratios[,sample_id]))),
+          ylim=c(0,max((sr_th_default*1.5),max(s_ratios[,sample_id]))),
           main=paste0(sample_id)
       )
-      abline(h=sample_ratio_threshold)
+      abline(h=sr_th_default)
       if (fg_detected) {
         result_text <- paste0(length(fg_indexes)," fusion probe",ifelse(length(fg_indexes)>1,"s","")," detected")
         legend("topright",title=result_text,apply(get_table(),1,paste,collapse=": "))

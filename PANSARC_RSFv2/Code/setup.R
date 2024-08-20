@@ -12,12 +12,12 @@ if (is.na(input_folder_name)) {
 }
 
 # ask for output folder
-output_folder_name <- choose.dir(
+output_folder_name <- jchoose.dir(
   default="D:\\Users\\INSTR-ADMIN\\Desktop\\PANSARC_RSFv2\\Output", 
   caption="Please select folder to store output files")
 
 # do the analysis!
-result <- analyze(
+result <- pansarc::analyze(
   input_folder_name,
   c("Nanostring probe list with medians.xlsx","probe medians"),
   output_folder_name,
