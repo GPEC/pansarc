@@ -11,6 +11,8 @@ installation instruction:
 5. install miktex.org: https://miktex.org/download
 6. (on Ubuntu or other Linux), need to install pdflatex
     - Ubuntu: > sudo apt install texlive-latex-base texlive-latex-extra
+7. (optional) if running script without R studio, please install pandoc 
+    - Ubuntu: > sudo apt install pandoc
 
 note: installation for miktex talks a long time!!!
 
@@ -28,7 +30,7 @@ build instruction (pansarc_*.tar.gz package):
 note: testing files located at (MAPcore Microsoft Teams) -> Documents -> IT resources -> GPEC server and apps -> pansarc testing
 
 ### installation log:
-2024-08-20: installed pansarc_1.1.tar.gz and copied PANSARC_RSFv2.zip to Optiplex XE2 (JBRC room 412)
+2024-08-21: installed pansarc_1.1.1.tar.gz and updated PANSARC_RSFv2/Code/setup.R to take in custom threshold file (Optiplex XE2 (JBRC room 412))
 2019-12-10: installed pansarc_0.1.1.tar.gz and copied PANSARC_RSFv2.zip to Optiplex XE2 (JBRC room 412)
 2019-05-13: installed pansarc_0.1.1.tar.gz and copied PANSARC_RSFv2.zip to Julie Ho's laptop
 2018-05-14: installed pansarc_0.1.1.tar.gz on Dell PC attached to Applied \Biosystems QuantStudio 6 Flex (room 3405)

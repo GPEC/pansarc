@@ -135,6 +135,7 @@ analyze <- function(input_fname,
     sample_ratio_threshold_arr <- rep(sr_th_default,nrow(s_ratios))
     if (nrow(sr_th_custom_d)>0) {
       sample_ratio_threshold_arr[match(sr_th_custom_d$gene,rownames(s_ratios))] <- sr_th_custom_d$threshold
+      sample_ratio_threshold_arr <- as.numeric(sample_ratio_threshold_arr)
     }
 
     fg_indexes <- which(s_ratios[,sample_id]>sample_ratio_threshold_arr)
